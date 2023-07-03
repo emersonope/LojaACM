@@ -1,34 +1,33 @@
-import model.Assinatura;
-import model.Cliente;
-import model.Pagamento;
-import model.Produto;
+import model.*;
 
 import java.math.BigDecimal;
 import java.nio.file.Paths;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
+import exception.ClienteNaoEncontradoException;
 
 public class Main {
 
     public static void main(String[] args) {
 
-        Produto produto1 = new Produto("Produto 1", Paths.get("/produtos/fear-of-the-dark.mp3") , new BigDecimal("10.00"));
-        Produto produto2 = new Produto("Produto 2", Paths.get("/produtos/Avatar.mp4") , new BigDecimal("20.00"));
-        Produto produto3 = new Produto("Produto 3", Paths.get("/produtos/monalisa.jpeg") , new BigDecimal("30.00"));
+        Produto produtoUm = new Produto("Produto 1", Paths.get("/produtos/fear-of-the-dark.mp3") , new BigDecimal("10.00"));
+        Produto produtoDois = new Produto("Produto 2", Paths.get("/produtos/Avatar.mp4") , new BigDecimal("20.00"));
+        Produto produtoTres = new Produto("Produto 3", Paths.get("/produtos/monalisa.jpeg") , new BigDecimal("30.00"));
 
-        Cliente cliente1 = new Cliente("João");
-        Cliente cliente2 = new Cliente("Maria");
-        Cliente cliente3 = new Cliente("José");
+        Cliente clienteUm = new Cliente("João");
+        Cliente clienteDois = new Cliente("Maria");
+        Cliente clienteTres = new Cliente("José");
 
-        Pagamento pagamento1 = new Pagamento(List.of(produto1, produto2), LocalDate.now(), cliente1);
-        Pagamento pagamento2 = new Pagamento(List.of(produto2, produto3), LocalDate.now().minusDays(1), cliente2);
-        Pagamento pagamento3 = new Pagamento(List.of(produto3, produto1), LocalDate.now().minusMonths(1), cliente3);
+        Pagamento pagamentoUm = new Pagamento(List.of(produtoUm, produtoDois), LocalDate.now(), clienteUm);
+        Pagamento pagamentoDois = new Pagamento(List.of(produtoDois, produtoTres), LocalDate.now().minusDays(1), clienteDois);
+        Pagamento pagamentoTres = new Pagamento(List.of(produtoTres, produtoUm), LocalDate.now().minusMonths(1), clienteTres);
 
         System.out.println("==============================================");
         System.out.println("2 - Ordene e imprima os pagamentos pela data de compra.");
-        List<Pagamento> listaDePagamentos = List.of(pagamento1, pagamento2, pagamento3);
+        List<Pagamento> listaDePagamentos = List.of(pagamentoUm, pagamentoDois, pagamentoTres);
 
         List<Pagamento> listaDePagamentosOrdenada = listaDePagamentos
                 .stream()
@@ -40,7 +39,7 @@ public class Main {
         System.out.println("==============================================");
         System.out.println("3 - Calcule e Imprima a soma dos valores de um pagamento com optional e recebendo um Double diretamente.");
 
-        Optional<BigDecimal> somaOptional = pagamento1.getProdutos().stream()
+        Optional<BigDecimal> somaOptional = pagamentoUm.getProdutos().stream()
                 .map(Produto::getPreco)
                 .reduce(BigDecimal::add);
 
@@ -82,13 +81,12 @@ public class Main {
                 .collect(Collectors.groupingBy(Pagamento::getCliente, Collectors.reducing(BigDecimal.ZERO, Pagamento::somarPagamentos, BigDecimal::add))
         );
 
-        Cliente quemGastouMais = gastoPorCliente.entrySet()
+        Optional<Cliente> quemGastouMais = gastoPorCliente.entrySet()
                 .stream()
                 .max(Map.Entry.comparingByValue())
-                .map(Map.Entry::getKey)
-                .orElse(null);
+                .map(Map.Entry::getKey);
 
-        System.out.println("Cliente que gastou mais: " + quemGastouMais.getNome());
+        System.out.println("Cliente que gastou mais: " + quemGastouMais.map(Cliente::getNome).orElseThrow(ClienteNaoEncontradoException::new));
 
         System.out.println("==============================================");
         System.out.println("8 - Quanto foi faturado em um determinado mês?");
@@ -106,29 +104,25 @@ public class Main {
         System.out.println("==============================================");
         System.out.println("9 - Crie 3 assinaturas com assinaturas de 99.98 reais, sendo 2 deles com assinaturas encerradas.");
 
-        Assinatura assinatura = new Assinatura(new BigDecimal("99.98"), LocalDate.now(), cliente1);
-        Assinatura assinaturaDois = new Assinatura(new BigDecimal("99.98"), LocalDate.now().minusMonths(2), LocalDate.now(), cliente2);
-        Assinatura assinaturaTres = new Assinatura(new BigDecimal("99.98"), LocalDate.now().minusMonths(1), LocalDate.now(), cliente3);
+        Assinatura assintaturaUm = new AssinaturaTrimestral(new BigDecimal("99.98"), LocalDateTime.now(), LocalDateTime.of(2023, 7, 1, 0, 0), LocalDateTime.of(2023, 7, 1, 0, 0), clienteUm);
+        Assinatura assinaturaDois = new AssinaturaSemestral(new BigDecimal("99.98"), LocalDateTime.now().minusMonths(2), LocalDateTime.now(), LocalDateTime.of(2023, 7, 1, 0, 0), LocalDateTime.of(2023, 7, 2, 0, 0), clienteDois);
+        Assinatura assinaturaTres = new AssinaturaAnual(new BigDecimal("99.98"), LocalDateTime.now().minusMonths(1), LocalDateTime.now(), LocalDateTime.of(2023, 7, 1, 0, 0), LocalDateTime.of(2023, 7, 2, 0, 0), clienteTres);
 
-        System.out.println("Assinatura :" + assinatura.getMensalidade() + ": " + assinatura.getDataInicio() + ": " + assinatura.getCliente().getNome());
+        System.out.println("Assinatura :" + assintaturaUm.getMensalidade() + ": " + assintaturaUm.getDataInicio() + ": " + assintaturaUm.getCliente().getNome());
         System.out.println("Assinatura :" + assinaturaDois.getMensalidade() + ": " + assinaturaDois.getDataInicio() + ": " + assinaturaDois.getDataFim() + ": " + assinaturaDois.getCliente().getNome());
         System.out.println("Assinatura :" + assinaturaTres.getMensalidade() + ": " + assinaturaTres.getDataInicio() + ": " + assinaturaTres.getDataFim() + ": " + assinaturaTres.getCliente().getNome());
 
         System.out.println("==============================================");
         System.out.println("10 - Imprima o tempo em meses de alguma assinatura ainda ativa.");
 
-        System.out.println("Tempo de assinaturaDois ativa: " + assinaturaDois.getDataInicio().until(assinaturaDois.getDataFim(), ChronoUnit.MONTHS) + " meses");
-
+        System.out.println("Tempo de assinaturaDois ativa: " + ChronoUnit.MONTHS.between(assinaturaDois.getDataInicio(), assinaturaDois.getDataFim().orElse(LocalDateTime.now()))+ " meses");
         System.out.println("==============================================");
         System.out.println("11 - Imprima o tempo de meses entre o start e end de todas assinaturas. Não utilize IFs para assinaturas sem end Time.");
 
-        List<Assinatura> assinaturas = List.of(assinatura, assinaturaDois, assinaturaTres);
-
+        List<Assinatura> assinaturas = List.of(assintaturaUm, assinaturaDois, assinaturaTres);
 
         assinaturas.forEach(assinaturaPresente -> {
-            long mesesEntreInicioEFim = Optional.ofNullable(assinaturaPresente.getDataFim())
-                    .map(dataFim -> assinaturaPresente.getDataInicio().until(dataFim, ChronoUnit.MONTHS))
-                    .orElse(0L);
+            long mesesEntreInicioEFim  = ChronoUnit.MONTHS.between(assinaturaPresente.getDataInicio(), assinaturaPresente.getDataFim().orElse(LocalDateTime.now()));
 
             System.out.println("Tempo em meses da assinatura: " + mesesEntreInicioEFim);
         });
@@ -137,9 +131,14 @@ public class Main {
         System.out.println("12 - Calcule o valor pago em cada assinatura até o momento.");
 
         assinaturas.forEach(assinaturaExistente -> {
-            long mesesDecorridos = assinaturaExistente.getDataInicio().until(LocalDate.now(), ChronoUnit.MONTHS);
+            long mesesDecorridos = assinaturaExistente.getDataInicio().until(LocalDateTime.now(), ChronoUnit.MONTHS);
             BigDecimal valorPago = assinaturaExistente.getMensalidade().multiply(BigDecimal.valueOf(mesesDecorridos));
             System.out.println("Valor pago na assinatura até o momento: " + valorPago);
         });
+
+        assintaturaUm.realizarCompra();
+        assinaturaDois.realizarCompra();
+        assinaturaTres.realizarCompra();
+
     }
 }
